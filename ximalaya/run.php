@@ -14,8 +14,15 @@ $logger = new Logger('ximalaya');
 $logger->pushHandler(new StreamHandler(__DIR__ . '/hunt.log', Logger::INFO));
 
 foreach ($config['sounds'] as $index => $value) {
-    $response = cheat($value['user'], $value['sound']);
-    $logger->addInfo($response);
+    // repeat default to 1.
+    if (!isset($value['repeat'])) {
+        $value['repeat'] = 1;
+    }
+
+    repeat($value['repeat'], function () use ($value, $logger) {
+        $response = cheat($value['user'], $value['sound']);
+        $logger->addInfo($response);
+    }, 1000);
 }
 
 function cheat($userId, $soundId)
@@ -30,4 +37,15 @@ function cheat($userId, $soundId)
     $curl->post($url, ['duration' => rand(200, 1000)]);
 
     return $curl->response;
+}
+
+function repeat($times, Closure $callback, $interval = 0)
+{
+    if (is_null($callback)) {
+        return;
+    }
+    for ($i = 0; $i < $times; $i++) {
+        call_user_func($callback, $i);
+        usleep($interval * 1000);
+    }
 }
